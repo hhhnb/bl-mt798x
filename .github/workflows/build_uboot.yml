@@ -19,10 +19,11 @@ jobs:
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
 
-      - name: Build for H3C NX30 Pro
+      - name: Build for H3C NX30 Pro (修复 defconfig 不存在问题)
         run: |
           chmod +x build.sh
-          SOC=mt7981 BOARD=h3c_magic-nx30-pro MULTI_LAYOUT=1 ./build.sh
+          # 核心修改：去掉 MULTI_LAYOUT=1，使用基础配置
+          SOC=mt7981 BOARD=h3c_magic-nx30-pro ./build.sh
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
@@ -32,3 +33,4 @@ jobs:
             out/
             *.bin
             *.fip
+          if-no-files-found: error # 无文件时标记失败
