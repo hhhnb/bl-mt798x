@@ -1,25 +1,44 @@
-name: Build H3C NX30 Pro U-Boot
+name: Build ImmortalWrt for NX30 Pro
+
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动点击运行
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - name: 拉取源码
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt update
+          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip libpython3-dev qemu-utils rsync srecord squashfs-tools subversion swig texinfo u-boot-tools upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+
+      - name: Update & Install Feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Load Custom Configuration
+        run: |
+          # 这一步非常重要：使用项目自带的 NX30 Pro 基础配置
+          cp -f devices/mt7981-nx30-pro/generic.config .config
+          # 如果你有特定的 .config 文本，也可以在这里用 echo 追加
+          make defconfig
+
+      - name: Download package
+        run: make download -j8
+
+      - name: Compile the firmware
+        run: |
+          # 首次编译建议用 -j1 排除错误，GitHub 性能较强可用多线程
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          repository: hhhnb/bl-mt798x
-          ref: master
-
-      - name: 安装完整编译依赖
-        run: |
-          sudo apt install gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
-
-      - name: 编译固件（强制指定输出路径）
-        run: |
-          chmod +x build.sh
-          # 编译时手动指定输出目录为 output/，避免路径混乱
-          SOC=mt7981 BOARD=h3c_magic-nx30-pro MULTI_LAYOUT=1 ./build.sh
-      
-
+          name: ImmortalWrt_NX30P_Firmware
+          path: bin/targets/mediatek/mt7981/*.bin
