@@ -1,7 +1,7 @@
-name: Build ImmortalWrt for NX30 Pro
+name: Build MT7981 U-Boot
 
 on:
-  workflow_dispatch: # 允许手动点击运行
+  workflow_dispatch: # 手动触发
 
 jobs:
   build:
@@ -11,34 +11,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialization environment
-        env:
-          DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt update
-          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip libpython3-dev qemu-utils rsync srecord squashfs-tools subversion swig texinfo u-boot-tools upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+          # 安装交叉编译器和必要工具
+          sudo apt install -y gcc-aarch64-linux-gnu build-essential bc libssl-dev device-tree-compiler python3 python3-pip
 
-      - name: Update & Install Feeds
+      - name: Build U-Boot (Standard Layout)
         run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          # 编译 H3C NX30 Pro 的 SPI-NAND 版本
+          # 默认通常是官方/标准分区布局
+          ./build.sh mt7981-h3c-magic-nx30-pro spim-nand
 
-      - name: Load Custom Configuration
-        run: |
-          # 这一步非常重要：使用项目自带的 NX30 Pro 基础配置
-          cp -f devices/mt7981-nx30-pro/generic.config .config
-          # 如果你有特定的 .config 文本，也可以在这里用 echo 追加
-          make defconfig
-
-      - name: Download package
-        run: make download -j8
-
-      - name: Compile the firmware
-        run: |
-          # 首次编译建议用 -j1 排除错误，GitHub 性能较强可用多线程
-          make -j$(nproc) || make -j1 V=s
-
-      - name: Upload Artifact
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ImmortalWrt_NX30P_Firmware
-          path: bin/targets/mediatek/mt7981/*.bin
+          name: NX30P-U-Boot-Files
+          path: output/*.bin
