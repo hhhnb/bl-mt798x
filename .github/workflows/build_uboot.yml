@@ -1,36 +1,33 @@
 name: Build H3C NX30 Pro U-Boot
 on:
-  workflow_dispatch: # 手动触发
-  push:
-    branches: [ main ]
+  workflow_dispatch: # 仅手动触发，避免误编译
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 拉取源码
         uses: actions/checkout@v4
         with:
           repository: hhhnb/bl-mt798x
           ref: master
 
-      - name: Install dependencies
+      - name: 安装编译依赖
         run: |
-          sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
+          sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
 
-      - name: Build for H3C NX30 Pro (修复 defconfig 不存在问题)
+      - name: 编译 H3C NX30 Pro 固件（指定基础配置）
         run: |
           chmod +x build.sh
-          # 核心修改：去掉 MULTI_LAYOUT=1，使用基础配置
-          SOC=mt7981 BOARD=h3c_magic-nx30-pro ./build.sh
+          # 关键：直接指定存在的基础配置文件，跳过脚本自动拼接逻辑
+          SOC=mt7981 BOARD=h3c_magic-nx30-pro DEFCONFIG=mt7981_h3c_magic-nx30-pro_defconfig ./build.sh
 
-      - name: Upload firmware
+      - name: 上传编译产物
         uses: actions/upload-artifact@v4
         with:
-          name: h3c-nx30-pro-uboot
+          name: h3c-nx30-pro-uboot-202507
           path: |
             out/
             *.bin
             *.fip
-          if-no-files-found: error # 无文件时标记失败
+          if-no-files-found: error
