@@ -1,0 +1,34 @@
+name: Build H3C NX30 Pro U-Boot
+on:
+  workflow_dispatch: # 手动触发
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: hhhnb/bl-mt798x
+          ref: master
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
+
+      - name: Build for H3C NX30 Pro
+        run: |
+          chmod +x build.sh
+          SOC=mt7981 BOARD=h3c_magic-nx30-pro MULTI_LAYOUT=1 ./build.sh
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: h3c-nx30-pro-uboot
+          path: |
+            out/
+            *.bin
+            *.fip
