@@ -25,25 +25,6 @@ jobs:
         run: |
           chmod +x build.sh
           # 编译时手动指定输出目录为 output/，避免路径混乱
-          SOC=mt7981 BOARD=h3c_magic-nx30-pro DEFCONFIG=mt7981_h3c_magic-nx30-pro_defconfig \
-          OUTPUT_DIR=./output ./build.sh 2>&1 | tee build.log
-          # 列出手动指定的输出目录
-          ls -la ./output || echo "手动输出目录未创建"
+          SOC=mt7981 BOARD=h3c_magic-nx30-pro MULTI_LAYOUT=1 ./build.sh
+      
 
-      - name: 查找所有固件文件（确认路径）
-        run: |
-          echo "===== 固件文件位置 ====="
-          find . -name "*.bin" -o -name "*.fip"
-          echo "===== 版本目录文件 ====="
-          ls -la ./uboot-mtk-20250711/build/ || echo "build 目录不存在"
-
-      - name: 上传固件（覆盖所有可能路径）
-        uses: actions/upload-artifact@v4
-        with:
-          name: h3c-nx30-pro-uboot
-          path: |
-            ./output/**/*          # 手动指定的输出目录
-            ./uboot-mtk-20250711/**/*.bin  # 版本目录下的 bin 文件
-            ./uboot-mtk-20250711/**/*.fip  # 版本目录下的 fip 文件
-            build.log              # 编译日志
-          if-no-files-found: warn
