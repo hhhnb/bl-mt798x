@@ -14,12 +14,7 @@ jobs:
 
       - name: 安装完整编译依赖
         run: |
-          sudo apt update && sudo apt install -y \
-            gcc-aarch64-linux-gnu build-essential flex bison libssl-dev \
-            device-tree-compiler qemu-user-static git wget unzip python3-pip \
-            libncurses5-dev libncursesw5-dev pkg-config libz-dev
-          # 修复 python 命令别名（脚本可能调用 python 而非 python3）
-          sudo ln -s /usr/bin/python3 /usr/bin/python || true
+          sudo apt install gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
 
       - name: 编译固件（强制指定输出路径）
         run: |
